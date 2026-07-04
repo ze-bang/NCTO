@@ -9,7 +9,7 @@
 # solver skips existing outputs, so re-running after a walltime kill resumes.
 #   Env overrides: WORKERS, RUN_POL (default 1).
 set -uo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"   # repo root
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"   # repo root (NCTO/)
 cd "$ROOT"
 WORKERS="${WORKERS:-$(nproc)}"
 export OMP_NUM_THREADS=1                  # one thread per solver process
