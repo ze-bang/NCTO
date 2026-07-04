@@ -35,26 +35,45 @@ Data lives in `tuned_kruger_campaign/defect_catalogue_L36/`; reference states in
 
 ## 🔨 TODO — the driving (phonon-pump) studies
 
-These are the remaining physics. All are driven-dynamics calculations with the
-E1 pump; none are finalized.
+All runs are consolidated into **one driver**, `run_campaign.py`, sharing
+`ncto_common.py` (single source of the Hamiltonian and the corrected
+signed-Grüneisen couplings `λ_{X,2}=(X/K)·λ_{K,2}`). Everything is **L=36**,
+resumable, and parallelised across all cores with one OMP-pinned worker pool
+(`OMP_NUM_THREADS=1` per solver process — no oversubscription).
+
+Run the whole campaign:
+```bash
+python3 NCTO_project/scripts/run_campaign.py all --workers "$(nproc)"
+```
+or any single study via its subcommand (below).
+
+### 0. Static (no-drive) 3Q-vs-ZZ phase diagram — NEW baseline
+Ground-state 3Q vs ZZ over J7 ∈ [0, −0.7] (Δ=0.05, 15 points), same λ_{K,2}
+span. No pump: the quadratic E1 striction `δX∝ε²` vanishes at the ε=0
+equilibrium (below the pseudo-JT threshold λ*_{K,2}≈1.55), so the static
+boundary is **λ-independent** — set by J7 alone. Emits `dE(J7)=E_3Q−E_ZZ`
+(the CNT driving force) and the winner map.
+```bash
+python3 NCTO_project/scripts/run_campaign.py static-pd --workers "$(nproc)"
+```
+~30 SA relaxations + energy evals (15 J7 × {3Q,ZZ}); minutes.
+→ `tuned_kruger_campaign/static_phase_diagram/analysis/static_phase_diagram.{csv,png}`
 
 ### 1. Clean switching phase diagram (Fig 1)
-Driven switch/no-switch over (J7, λ_{K,2}, E0) on a clean lattice.
+Driven switch/no-switch over (J7, λ_{K,2}, E0), all four channels (signed
+Grüneisen). 6 J7 × 7 λ × 11 E0 = 462 L36 MD.
 ```bash
-python3 NCTO_project/scripts/run_tuned_kruger_phase_diagram.py --all-channels --workers "$(nproc)"
+python3 NCTO_project/scripts/run_campaign.py drive-pd --all-channels --workers "$(nproc)"
 python3 NCTO_project/scripts/plot_phase_barrier_cube.py --all-channels
 ```
 
 ### 2. Switching fraction vs fluence at different disorder (Figs 2c, 4)
-Fixed enhanced-|K| line + zero-mean Gaussian background disorder on all NN bonds;
-switched fraction vs E0 for several σ_K.
+Fixed enhanced-|K| line (`dK=−0.5|K|`, hw=2.0) + zero-mean Gaussian background
+disorder on all NN bonds; switched fraction vs E0 for several σ_K.
 ```bash
-python3 NCTO_project/scripts/cross_validate_pinned_switching_l36.py \
-  --lattice 36 --dtype kred --strength 0.5 --half-width 2.0 \
-  --disorder-mode global-zero-k --seeds 25 \
-  --sigma-k-values 0.0 0.1 0.2 0.3 0.4 0.5 \
-  --e0-values 0 6 8 9 10 10.5 11 11.5 12 12.5 13 13.5 14 15 16 17 18 19 20 22 25 \
-  --output-suffix allJKGG_err10 --workers "$(nproc)"
+python3 NCTO_project/scripts/run_campaign.py switching --workers "$(nproc)"
+# (defaults: kred, strength 0.5, half-width 2.0, global-zero-k, seeds 25,
+#  σ_K 0..0.5, the 21-point E0 grid, suffix allJKGG_err10)
 
 A=NCTO_project/tuned_kruger_campaign/pinning_switching_crosscheck_L36/analysis
 S=$A/L36_kred_s0p500_hw2p00_allJKGG_err10_drive_crosscheck_summary.json
@@ -67,15 +86,16 @@ python3 NCTO_project/scripts/plot_one_picture_signatures.py --switch-summary "$S
 ### 3. Polarization study ± J7 phonon tuning (Fig `pol`)
 Clean lattice (no defect, no disorder). Scan pump polarization θ × fluence E0,
 run twice: J7 ring-exchange phonon coupling **off** (`λ_{J7,0}=0`) vs **on**
-(`λ_{J7,0}=(J7/K)λ_{K,2}=1.0×10⁻³`, the Grüneisen-matched value). The bilinear
+(`λ_{J7,0}=(J7/K)λ_{K,2}=+1.014×10⁻³`, the Grüneisen-matched value). The bilinear
 striction makes the threshold θ-dependent; the isotropic J7 breathing coupling
-`δJ7(Q)=λ_{J7,0}|Q|²` shifts E0ᶜ(θ) uniformly in θ (phonon-amplitude tuning of
-the ring exchange). Their difference is the J7-tuning contribution.
+`δJ7(Q)=λ_{J7,0}|Q|²` shifts E0ᶜ(θ) uniformly in θ. Their difference is the
+J7-tuning contribution. 2×7×9 = 126 L36 MD.
 ```bash
-python3 NCTO_project/scripts/run_polarization_fluence_study.py --lattice 36 --workers "$(nproc)"
+python3 NCTO_project/scripts/run_campaign.py polarization --workers "$(nproc)"
 ```
 
-**Cluster:** `sbatch NCTO_project/cluster_campaign/run_campaign.sbatch` runs 1–3.
+**Cluster:** `sbatch NCTO_project/cluster_campaign/run_campaign.sbatch` (update it to
+call `run_campaign.py all`).
 
 ---
 
