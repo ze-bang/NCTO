@@ -1,0 +1,1 @@
+/project/6003507/zhouzb79/NCTO/NCTO_project/tuned_kruger_campaign/static_phase_diagram/relax/J70400/zz_E/cfg_spins.txt 0.0 0.0 0 /project/6003507/zhouzb79/NCTO/NCTO_project/tuned_kruger_campaign/static_phase_diagram/relax/J70400/zz_E/cfg_H.txt
