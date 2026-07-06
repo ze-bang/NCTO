@@ -103,13 +103,16 @@ def run_j7(lattice: int, j7: float, r_values: list[float], force: bool) -> dict:
         return {}
     df_site = (ezz - e3q) / ctx.n            # >0 => ZZ metastable (3Q ground state)
 
+    # Physically relevant nucleus for the lifetime of a pump-created ZZ region:
+    # a 3Q droplet (the FAVOURABLE phase) nucleating inside the metastable ZZ
+    # background -> dE(R) = 2*pi*sigma*R - pi*Df_area*R^2 turns over at R*.
     curve = []
     for R in r_values:
-        d = droplet(ctx, q3, zz, R)
+        d = droplet(ctx, zz, q3, R)          # inside = 3Q, background = ZZ
         eR = energy_of(lattice=lattice, j7=j7, work_dir=base / f"R{R:.1f}".replace(".", "p"), spins=d)
         if eR is None:
             continue
-        curve.append((float(R), float(eR - e3q)))
+        curve.append((float(R), float(eR - ezz)))   # excess over metastable ZZ
     curve.sort()
     Rs = np.array([c[0] for c in curve])
     dE = np.array([c[1] for c in curve])
