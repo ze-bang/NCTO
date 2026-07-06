@@ -1,0 +1,53 @@
+{
+  "summary": "NCTO_project/tuned_kruger_campaign/pinning_switching_crosscheck_L36/analysis/L36_kred_s0p500_hw2p00_allJKGG_err10_drive_crosscheck_summary.json",
+  "transition_widths": [
+    {
+      "sigma_k": 0.0,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 1,
+      "n_max": 1
+    },
+    {
+      "sigma_k": 0.1,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 25,
+      "n_max": 25
+    },
+    {
+      "sigma_k": 0.2,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 25,
+      "n_max": 25
+    },
+    {
+      "sigma_k": 0.3,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 25,
+      "n_max": 25
+    },
+    {
+      "sigma_k": 0.4,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 25,
+      "n_max": 25
+    },
+    {
+      "sigma_k": 0.5,
+      "width": NaN,
+      "e25": NaN,
+      "e75": NaN,
+      "n_min": 25,
+      "n_max": 25
+    }
+  ]
+}

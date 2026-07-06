@@ -61,7 +61,9 @@ python3 NCTO_project/scripts/run_campaign.py static-pd --workers "$(nproc)"
 
 ### 1. Clean switching phase diagram (Fig 1)
 Driven switch/no-switch over (J7, λ_{K,2}, E0), all four channels (signed
-Grüneisen). 6 J7 × 7 λ × 11 E0 = 462 L36 MD.
+Grüneisen). 6 J7 × 7 λ × **18 E0 (E0→40)** = 756 L36 MD. The E0 grid runs to 40
+because the L=36 threshold is ~16 (vs ~8 at L18) — the extension is now the
+default.
 ```bash
 python3 NCTO_project/scripts/run_campaign.py drive-pd --all-channels --workers "$(nproc)"
 python3 NCTO_project/scripts/plot_phase_barrier_cube.py --all-channels

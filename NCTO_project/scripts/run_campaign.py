@@ -37,7 +37,11 @@ from ncto_common import (CAMPAIGN, ROOT, LATTICE, LATTICE as L_DEFAULT, LAMBDA_K
 J7_STATIC = [round(-0.05 * i, 3) for i in range(15)]          # 0.0 .. -0.70
 J7_DRIVE = [-0.40, -0.45, -0.50, -0.55, -0.60, -0.70]         # near-SU(2) window
 LAMBDA_GRID = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08]
-E0_DRIVE = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 16.0]
+# E0 grids run to the (higher, L=36) switching threshold established this campaign.
+E0_DRIVE = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 16.0,
+            18.0, 20.0, 22.0, 25.0, 30.0, 35.0, 40.0]
+E0_SWITCH = [0, 6, 8, 9, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 15, 16, 17, 18,
+             19, 20, 22, 25, 30, 35, 40, 50]
 
 _CTX: dict[int, LatticeContext] = {}
 
@@ -528,8 +532,7 @@ def build_parser():
     s.add_argument("--strength", type=float, default=0.5)
     s.add_argument("--half-width", type=float, default=2.0)
     s.add_argument("--sigma-k-values", nargs="+", type=float, default=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
-    s.add_argument("--e0-values", nargs="+", type=float,
-                   default=[0, 6, 8, 9, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 15, 16, 17, 18, 19, 20, 22, 25])
+    s.add_argument("--e0-values", nargs="+", type=float, default=E0_SWITCH)
     s.add_argument("--seeds", type=int, default=25)
     s.add_argument("--disorder-mode", choices=["selected-centered", "global-zero-k"], default="global-zero-k")
     s.add_argument("--no-quench", action="store_true")
@@ -559,8 +562,7 @@ def cmd_all(args):
     cmd_switching(argparse.Namespace(workers=args.workers, lattice=args.lattice,
                                      dtype="kred", strength=0.5, half_width=2.0,
                                      sigma_k_values=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
-                                     e0_values=[0, 6, 8, 9, 10, 10.5, 11, 11.5, 12, 12.5, 13,
-                                                13.5, 14, 15, 16, 17, 18, 19, 20, 22, 25],
+                                     e0_values=E0_SWITCH,
                                      seeds=25, disorder_mode="global-zero-k",
                                      no_quench=False, output_suffix="allJKGG_err10"))
     # polarization

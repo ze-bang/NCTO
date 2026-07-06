@@ -1,0 +1,14 @@
+{
+  "lattice": 54,
+  "seed_half_len": 14.0,
+  "N": 5832,
+  "strength": 0.5,
+  "half_width": 2.0,
+  "barrier_meV": 0.0,
+  "saddle_image": 0,
+  "contained": true,
+  "saddle_line_frac": 0.5992063492063492,
+  "ell_star_cells": 40.703193977868615,
+  "n_zz_line": 453,
+  "n_line": 756
+}
