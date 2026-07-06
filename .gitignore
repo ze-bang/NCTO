@@ -4,10 +4,28 @@
 **/configs/
 **/initial_states/
 **/disorder_files/
+**/seeds/
+**/relax/
 *.h5
 *.hdf5
 *.npy
 *.npz
+
+# Raw solver intermediates (regenerated; keep only analysis CSV/PNG/JSON)
+*.param
+**/positions.txt
+**/spins_T=*.txt
+**/seed_in.txt
+**/final_in.txt
+**/cfg_*.txt
+**/*_H.txt
+**/manifest.txt
+**/band_e.csv
+# GNEB intermediates
+**/img_*.txt
+**/defect.txt
+**/band_manifest.txt
+**/*_in.txt
 
 # Python / caches
 __pycache__/
