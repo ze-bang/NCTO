@@ -387,12 +387,17 @@ def cmd_switching(args):
                                  sig, seed, args.disorder_mode, def_dir)
             items.append((sig, seed, df))
 
+    # Seed from the VALIDATED relaxed L18 3Q reference (r3~0.97), not the analytic
+    # triple_q_state -- the analytic ansatz collapses to r3~0 at this working point
+    # (see polarization study), leaving the MD with no 3Q to switch.
+    q3_seed = nc.tile_l18_reference(nc.REF_3Q_L18, ctx.lattice)
+
     def _relax(item):
         sig, seed, df = item
         tag = (f"L{ctx.lattice}_{args.dtype}_s{args.strength:.3f}_hw{args.half_width:.2f}"
                f"_sig{sig:.3f}_seed{seed:03d}").replace(".", "p")
         init = sa_relax(lattice=ctx.lattice, j7=J7_DEFAULT, work_dir=init_dir / tag,
-                        seed_spins=ctx.q3, n_deterministics=1200, disorder_file=df)
+                        seed_spins=q3_seed, n_deterministics=1200, disorder_file=df)
         return (sig, seed), (df, init_dir / tag / "sample_0" / "spins_T=0.txt")
 
     init_map = {}
