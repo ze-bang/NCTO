@@ -1,32 +1,12 @@
 [
   {
-    "lattice": 18,
-    "N": 648,
-    "n_defect_bonds": 225,
-    "strength": 0.5,
-    "half_width": 2.0,
-    "barrier_meV": 10.46284783905594,
-    "saddle_image": 10,
-    "iterations": 994
-  },
-  {
     "lattice": 36,
     "N": 2592,
-    "n_defect_bonds": 459,
+    "n_defect_bonds": 353,
     "strength": 0.5,
-    "half_width": 2.0,
-    "barrier_meV": 21.219254354014993,
-    "saddle_image": 10,
-    "iterations": 1600
-  },
-  {
-    "lattice": 54,
-    "N": 5832,
-    "n_defect_bonds": 693,
-    "strength": 0.5,
-    "half_width": 2.0,
-    "barrier_meV": 29.413751229796617,
-    "saddle_image": 10,
-    "iterations": 1600
+    "half_width": 1.7,
+    "barrier_meV": 13.581511219297681,
+    "saddle_image": 7,
+    "iterations": 1916
   }
 ]

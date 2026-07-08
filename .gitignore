@@ -49,3 +49,6 @@ venv/
 *.swp
 /build
 /util
+**/finite_size_scan/L*_s*/
+**/localized_nucleus/L*/
+**/droplet_energetics/L*J7*/
