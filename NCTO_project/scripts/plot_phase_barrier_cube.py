@@ -20,7 +20,8 @@ from matplotlib.patches import Patch
 from matplotlib import cm, colors
 import argparse
 
-ROOT = "/home/pc_linux/ClassicalSpin_Cpp"
+from pathlib import Path
+ROOT = str(Path(__file__).resolve().parents[2])
 
 def set_dirs(all_channels: bool):
     global PD, ANA, KB
