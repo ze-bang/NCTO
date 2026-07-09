@@ -166,7 +166,7 @@ def plot_phase():
     fig = plt.figure(figsize=(7.5, 6.5))
     ax = fig.add_subplot(111, projection="3d")
     draw_cube(ax, j7s, lams, e0s, vof, cmap, norm,
-              "$J_7$ (code)", "$\\lambda_{K2}$", "$E_0$ (pump fluence)")
+              "$J_7$ (ring exchange)", "E1 coupling scale $\\lambda$", "$E_0$ (pump fluence)")
     ax.set_title("Optical switching phase diagram", fontsize=12, pad=10)
     ax.legend(handles=[Patch(facecolor="#6E89AE", edgecolor="black",
                              linewidth=0.6, label="3Q (no switch)"),
@@ -210,7 +210,7 @@ def plot_barrier(which):
     fig = plt.figure(figsize=(7.8, 6.5))
     ax = fig.add_subplot(111, projection="3d")
     draw_cube(ax, j7s, lams, e0s, vof, cmap, norm,
-              "$J_7$ (code)", "$\\lambda_{K2}$", "$E_0$ (pump fluence)")
+              "$J_7$ (ring exchange)", "E1 coupling scale $\\lambda$", "$E_0$ (pump fluence)")
     label = ("Forward barrier $E_f$ (3Q $\\rightarrow$ ZZ)" if which == "forward"
              else "Backward barrier $E_b$ (ZZ $\\rightarrow$ 3Q)")
     ax.set_title(label + "\nstrain-relaxed climbing-image GNEB", fontsize=11)
