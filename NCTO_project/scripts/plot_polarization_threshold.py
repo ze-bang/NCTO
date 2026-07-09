@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Critical pump fluence E0c vs polarization angle theta, clean system,
-with and without the J7 (ring-exchange breathing) modulation.
+"""Polarization switching map r3(theta, E0), clean system, J7 modulation off vs on.
 
-E0c(theta) = the fluence at which the driven state switches (r3 crosses 0.2),
-interpolated from the r3(E0) curve at each theta.  Two lines: J7 modulation
-OFF (lambda_J7,0=0) vs ON (lambda_J7,0=(J7/K)lambda_K2).
+The driven state at intermediate theta settles (converged) into STABLE PARTIAL
+nematic configurations (r3 ~ 0.2-0.5), not a clean single-domain zigzag, so a
+binary threshold is ambiguous there.  We therefore show the full converged
+order parameter r3 over (theta, E0) as a heatmap (low r3 = switched to a single
+zigzag variant), with the r3=0.2 switching contour = the critical fluence
+boundary E0c(theta).  Two panels: J7 modulation OFF vs ON.
 """
 from __future__ import annotations
 
@@ -20,18 +22,6 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT = (ROOT / "NCTO_project" / "tuned_kruger_campaign" / "polarization_fluence_study"
            / "analysis" / "polarization_fluence.csv")
-R3_SWITCH = 0.2
-
-
-def e0c(theta_rows) -> float:
-    """Interpolated E0 where r3 first drops through R3_SWITCH (nan if never)."""
-    pts = sorted(theta_rows, key=lambda r: r["e0"])
-    e = [p["e0"] for p in pts]; r = [p["r3"] for p in pts]
-    for i in range(1, len(e)):
-        if r[i - 1] >= R3_SWITCH > r[i]:            # crossing from unswitched->switched
-            f = (r[i - 1] - R3_SWITCH) / (r[i - 1] - r[i])
-            return e[i - 1] + f * (e[i] - e[i - 1])
-    return float("nan")
 
 
 def main() -> None:
@@ -40,21 +30,36 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    rows = [dict(coupling=r["coupling"], theta=float(r["theta_deg"]),
-                 e0=float(r["e0"]), r3=float(r["r3"])) for r in csv.DictReader(args.csv.open())]
-    thetas = sorted({r["theta"] for r in rows})
+    rows = [dict(c=r["coupling"], t=float(r["theta_deg"]), e=float(r["e0"]), r3=float(r["r3"]))
+            for r in csv.DictReader(args.csv.open())]
+    thetas = sorted({r["t"] for r in rows})
+    e0s = sorted({r["e"] for r in rows})
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.8))
-    styles = {"j7off": ("o-", "C0", r"J7 modulation OFF ($\lambda_{J7,0}=0$)"),
-              "j7on": ("s-", "C3", r"J7 modulation ON ($\lambda_{J7,0}=(J7/K)\lambda_{K,2}$)")}
-    for coup, (fmt, color, label) in styles.items():
-        ec = [e0c([r for r in rows if r["coupling"] == coup and r["theta"] == t]) for t in thetas]
-        ax.plot(thetas, ec, fmt, color=color, ms=5, label=label)
-    ax.set_xlabel(r"pump polarization $\theta$ (deg)")
-    ax.set_ylabel(r"critical fluence $E_0^{\,c}(\theta)$")
-    ax.set_title("Clean-system switching threshold vs polarization")
-    ax.legend(fontsize=9, frameon=False); ax.grid(alpha=0.25)
-    fig.tight_layout()
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.8), sharey=True)
+    couplings = [("j7off", r"J7 modulation OFF ($\lambda_{J7,0}=0$)"),
+                 ("j7on", r"J7 modulation ON ($\lambda_{J7,0}=(J7/K)\lambda_{K,2}$)")]
+    im = None
+    for ax, (coup, title) in zip(axes, couplings):
+        Z = np.full((len(e0s), len(thetas)), np.nan)
+        for i, e in enumerate(e0s):
+            for k, t in enumerate(thetas):
+                v = next((r["r3"] for r in rows if r["c"] == coup and r["t"] == t and r["e"] == e), None)
+                if v is not None:
+                    Z[i, k] = v
+        im = ax.pcolormesh(thetas, e0s, Z, cmap="viridis_r", vmin=0, vmax=1, shading="nearest")
+        # switching boundary = critical fluence E0c(theta)
+        TH, EE = np.meshgrid(thetas, e0s)
+        try:
+            ax.contour(TH, EE, Z, levels=[0.2], colors="white", linewidths=2.0)
+        except Exception:
+            pass
+        ax.set_xlabel(r"pump polarization $\theta$ (deg)")
+        ax.set_title(title, fontsize=10)
+    axes[0].set_ylabel(r"pump fluence $E_0$")
+    cb = fig.colorbar(im, ax=axes, shrink=0.85)
+    cb.set_label(r"converged $r_3$  (low = switched to single zigzag)")
+    fig.suptitle(r"Clean-system polarization switching; white line = critical fluence $E_0^c(\theta)$ ($r_3$=0.2)",
+                 fontsize=11)
     out = args.out or (args.csv.parent / "polarization_threshold_vs_theta.png")
     fig.savefig(out, dpi=190, bbox_inches="tight")
     print(f"wrote {out.relative_to(ROOT)}")
