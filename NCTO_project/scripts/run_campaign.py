@@ -114,20 +114,33 @@ def cmd_static_pd(args):
         w.writeheader(); w.writerows(rows)
     print(f"wrote {csv_path.relative_to(ROOT)} ({len(rows)} J7 points)", flush=True)
 
+    # dE(3Q-ZZ) is only meaningful where the 3Q branch is actually metastable;
+    # for J7 > ~-0.40 the 3Q seed collapses (r3_3Q -> 0) so those points are
+    # invalid (the "3Q" energy is a collapsed state). Mask them.
+    R3_MIN = 0.85
     plt = _mpl()
-    j7s = [r["J7"] for r in rows]
-    de = [r["dE_per_site"] for r in rows]
-    winner = np.array([[0.0 if r["ground_state"] == "3Q" else 1.0] for r in rows])
+    j7s = np.array([r["J7"] for r in rows])
+    de = np.array([r["dE_per_site"] for r in rows])
+    valid = np.array([r["r3_3Q"] >= R3_MIN for r in rows])
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(11, 4.2))
     ax0.axhline(0.0, color="0.6", lw=0.8)
-    ax0.plot(j7s, de, "o-", color="C0")
+    ax0.plot(j7s[valid], de[valid], "o-", color="C0", label="3Q metastable")
+    ax0.plot(j7s[~valid], de[~valid], "x", color="0.7", label=r"3Q collapsed (invalid)")
+    if valid.any():
+        ax0.axvspan(j7s[valid].max(), j7s.max(), color="0.9", zorder=0)
+        ax0.text(0.5 * (j7s[valid].max() + j7s.max()), ax0.get_ylim()[1] * 0.7,
+                 "3Q not\nmetastable", ha="center", fontsize=8, color="0.5")
     ax0.set_xlabel("$J_7$"); ax0.set_ylabel(r"$(E_{3Q}-E_{ZZ})/N$ (meV/site)")
     ax0.set_title("Static driving force (>0: ZZ lower)")
+    ax0.legend(fontsize=8, frameon=False)
+    # ground-state column, greyed where 3Q not metastable (only ZZ exists there)
     lam = args.lambda_values
-    grid = np.tile(winner, (1, len(lam)))     # flat along lambda (static-inert)
-    im = ax1.pcolormesh(lam, j7s, grid, cmap="RdBu_r", vmin=0, vmax=1, shading="nearest")
+    col = np.where(valid, np.where(de < 0, 0.0, 1.0), np.nan)  # 0=3Q,1=ZZ, nan=only-ZZ
+    grid = np.tile(col[:, None], (1, len(lam)))
+    cmap = plt.cm.RdBu_r.copy(); cmap.set_bad("0.85")
+    im = ax1.pcolormesh(lam, j7s, grid, cmap=cmap, vmin=0, vmax=1, shading="nearest")
     ax1.set_xlabel(r"$\lambda_{K,2}$ (static-inert)"); ax1.set_ylabel("$J_7$")
-    ax1.set_title("Ground state (blue=3Q, red=ZZ)")
+    ax1.set_title("Ground state (blue=3Q, red=ZZ, grey=only ZZ stable)")
     fig.colorbar(im, ax=ax1, ticks=[0, 1], label="0=3Q  1=ZZ")
     fig.suptitle(f"Static (no-drive) 3Q vs ZZ phase diagram, L={args.lattice}", fontsize=11)
     png = ana / "static_phase_diagram_3q_zz.png"
