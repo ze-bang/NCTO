@@ -29,15 +29,29 @@ T = 10.0
 TARGET_TAU = 0.8e-3       # s
 
 
-def collect(lattice: int, strength: float) -> tuple[np.ndarray, np.ndarray]:
-    hw, bar = [], []
+def collect(lattice: int, strength: float):
+    """Return hw, barrier, and a validity mask (interior saddle = converged MEP;
+    a saddle pinned at image 0 or the last image is a failed path)."""
+    hw, bar, ok = [], [], []
     for d in sorted(FS.glob(f"L{lattice}_s{strength:.3f}_hw*".replace(".", "p"))):
         rep = d / "report.json"
-        if rep.exists():
-            r = json.loads(rep.read_text())
-            hw.append(r["half_width"]); bar.append(r["barrier_meV"])
+        if not rep.exists():
+            continue
+        r = json.loads(rep.read_text())
+        hw.append(r["half_width"]); bar.append(r["barrier_meV"])
+        si = r.get("saddle_image", -1)
+        ok.append(0 < si < 20)                 # 21-image band -> interior = 1..19
     o = np.argsort(hw)
-    return np.array(hw)[o], np.array(bar)[o]
+    return np.array(hw)[o], np.array(bar)[o], np.array(ok)[o]
+
+
+def ascending_crossing(hw, bar, target):
+    """First hw (low->high) where the barrier rises through `target`."""
+    for i in range(1, len(hw)):
+        if bar[i - 1] < target <= bar[i]:
+            f = (target - bar[i - 1]) / (bar[i] - bar[i - 1])
+            return hw[i - 1] + f * (hw[i] - hw[i - 1])
+    return float("nan")
 
 
 def lifetime(dG_meV: np.ndarray) -> np.ndarray:
@@ -51,15 +65,18 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=FS / "kinetic_barrier_vs_width.png")
     args = ap.parse_args()
 
-    hw, bar = collect(args.lattice, args.strength)
+    hw_all, bar_all, ok = collect(args.lattice, args.strength)
+    hw, bar = hw_all[ok], bar_all[ok]              # converged (interior-saddle) points
     tau = lifetime(bar)
     kT = KB * T
     dG_target = kT * math.log(TARGET_TAU / TAU0)
-    hw_star = float(np.interp(dG_target, bar, hw)) if bar.min() < dG_target < bar.max() else float("nan")
+    hw_star = ascending_crossing(hw, bar, dG_target)   # robust: rising-edge crossing
 
     fig, (a, b) = plt.subplots(1, 2, figsize=(11.5, 4.6))
 
-    a.plot(hw, bar, "o-", color="C0", ms=6)
+    a.plot(hw, bar, "o-", color="C0", ms=6, label="converged MEP")
+    if (~ok).any():
+        a.plot(hw_all[~ok], bar_all[~ok], "x", color="0.7", ms=7, label="failed MEP (endpoint saddle)")
     a.axhline(dG_target, color="C3", ls="--", lw=1.2,
               label=fr"$\Delta G^*$={dG_target:.1f} meV (0.8 ms, 10 K)")
     if np.isfinite(hw_star):
@@ -67,7 +84,7 @@ def main() -> None:
     a.set_xlabel("defect half-width  hw (cells)")
     a.set_ylabel(r"depinning barrier $\Delta G$ (meV)")
     a.set_title(f"(3) GNEB kinetic barrier vs width, L={args.lattice}")
-    a.legend(fontsize=9, frameon=False); a.grid(alpha=0.25)
+    a.legend(fontsize=8, frameon=False); a.grid(alpha=0.25)
 
     b.semilogy(hw, tau * 1e3, "o-", color="C0", ms=6)
     b.axhline(0.8, color="C3", ls="--", lw=1.2, label="0.8 ms target")
