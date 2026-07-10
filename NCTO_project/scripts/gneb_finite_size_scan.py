@@ -32,7 +32,7 @@ import ncto_common as nc
 from ncto_common import ROOT, EXE, FIELD_EVAL as FE, J, K, GAMMA, GAMMAP, J2_A, J2_B, J3, J7_DEFAULT as J7
 
 NN_CUTOFF = nc.NN_CUTOFF
-OUT_ROOT = nc.CAMPAIGN / "critical_radius" / "finite_size_scan"
+OUT_ROOT = nc.CAMPAIGN / "kinetic_barrier" / "finite_size_scaling"
 OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
 
@@ -190,8 +190,17 @@ def reparametrize(band: np.ndarray) -> np.ndarray:
 
 
 def mep_barrier(g: Geom, work_dir: Path, cfg: Path, start: np.ndarray, end: np.ndarray, *,
-                images: int, n_iter: int, dt: float, climb_start: int, plateau_win: int) -> dict:
-    band = np.array([slerp(start, end, i / (images - 1)) for i in range(images)])
+                images: int, n_iter: int, dt: float, climb_start: int, plateau_win: int,
+                init_band: np.ndarray | None = None) -> dict:
+    if init_band is not None and len(init_band) == images:
+        # warm start (continuation): reuse a converged band from a neighbouring
+        # parameter point; endpoints are replaced and the path re-relaxed.
+        band = rn(init_band.copy())
+    else:
+        band = np.array([slerp(start, end, i / (images - 1)) for i in range(images)])
+    band[0] = start
+    band[-1] = end
+    band = reparametrize(band)
     band[0] = start
     band[-1] = end
     history = []

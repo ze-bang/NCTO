@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-FS = ROOT / "NCTO_project" / "tuned_kruger_campaign" / "critical_radius" / "finite_size_scan"
+KB_DIR = ROOT / "NCTO_project" / "tuned_kruger_campaign" / "kinetic_barrier"
+WS = KB_DIR / "width_sweep"
 
 KB = 0.0861733            # meV/K
 J = 0.68                  # meV  (tau0 ~ hbar/J)
@@ -30,17 +31,13 @@ TARGET_TAU = 0.8e-3       # s
 
 
 def collect(lattice: int, strength: float):
-    """Return hw, barrier, and a validity mask (interior saddle = converged MEP;
-    a saddle pinned at image 0 or the last image is a failed path)."""
+    """Read the continuation sweep's barrier_vs_hw.csv (hw, barrier, valid)."""
+    import csv as _csv
     hw, bar, ok = [], [], []
-    for d in sorted(FS.glob(f"L{lattice}_s{strength:.3f}_hw*".replace(".", "p"))):
-        rep = d / "report.json"
-        if not rep.exists():
-            continue
-        r = json.loads(rep.read_text())
-        hw.append(r["half_width"]); bar.append(r["barrier_meV"])
-        si = r.get("saddle_image", -1)
-        ok.append(0 < si < 20)                 # 21-image band -> interior = 1..19
+    with (WS / "barrier_vs_hw.csv").open() as f:
+        for r in _csv.DictReader(f):
+            hw.append(float(r["half_width"])); bar.append(float(r["barrier_meV"]))
+            ok.append(bool(int(r["valid"])))
     o = np.argsort(hw)
     return np.array(hw)[o], np.array(bar)[o], np.array(ok)[o]
 
@@ -62,7 +59,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lattice", type=int, default=36)
     ap.add_argument("--strength", type=float, default=0.5)
-    ap.add_argument("--out", type=Path, default=FS / "kinetic_barrier_vs_width.png")
+    ap.add_argument("--out", type=Path, default=KB_DIR / "kinetic_barrier_vs_width.png")
     args = ap.parse_args()
 
     hw_all, bar_all, ok = collect(args.lattice, args.strength)
