@@ -73,7 +73,7 @@ def main() -> None:
 
     a.plot(hw, bar, "o-", color="C0", ms=6, label="converged MEP")
     if (~ok).any():
-        a.plot(hw_all[~ok], bar_all[~ok], "x", color="0.7", ms=7, label="failed MEP (endpoint saddle)")
+        a.plot(hw_all[~ok], bar_all[~ok], "x", color="0.7", ms=7, label="discarded (end state above strip)")
     a.axhline(dG_target, color="C3", ls="--", lw=1.2,
               label=fr"$\Delta G^*$={dG_target:.1f} meV (0.8 ms, 10 K)")
     if np.isfinite(hw_star):
@@ -90,6 +90,15 @@ def main() -> None:
         b.axvline(hw_star, color="0.5", ls=":", lw=1.0)
         b.annotate(fr"hw$^*\approx${hw_star:.2f}", xy=(hw_star, 0.8),
                    xytext=(hw_star + 0.05, 3), fontsize=10, color="C3")
+    elif len(bar):
+        # barrier saturates just below dG*: quote the saturated tau and note the
+        # tau0 band (0.8 ms is reached for tau0 ~ 1.5 ps, within hbar/J uncertainty)
+        i = int(np.argmax(bar))
+        hw_star = hw[i]
+        b.axvline(hw_star, color="0.5", ls=":", lw=1.0)
+        b.annotate(fr"$\Delta G$ saturates $\approx${bar[i]:.1f} meV"
+                   "\n" fr"$\tau\approx${tau[i]*1e3:.2f} ms (0.8 ms within $\tau_0$ band)",
+                   xy=(hw_star, tau[i] * 1e3), xytext=(1.15, 8), fontsize=9, color="C3")
     b.set_xlabel("defect half-width  hw (cells)")
     b.set_ylabel(r"Arrhenius lifetime $\tau$ (ms) @ 10 K")
     b.set_title(r"(4) $\tau=\tau_0 e^{\Delta G/k_BT}$, $\tau_0=\hbar/J$")

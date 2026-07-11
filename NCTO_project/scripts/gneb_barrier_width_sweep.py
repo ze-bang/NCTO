@@ -101,17 +101,26 @@ def main() -> None:
 
     csv_path = OUT / "barrier_vs_hw.csv"
     with csv_path.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["half_width", "barrier_meV", "n_defect_bonds",
-                                          "saddle_image", "iterations", "valid"])
+        w = csv.DictWriter(f, fieldnames=["half_width", "barrier_meV", "dE_3Q_minus_strip_meV",
+                                          "n_defect_bonds", "saddle_image", "iterations", "valid"])
         w.writeheader()
         for r in sorted(results, key=lambda r: r["half_width"]):
+            tag = f"hw{r['half_width']:.2f}".replace(".", "p")
+            e = np.load(OUT / tag / "final_band.npz")["energies"]
+            dE = float(e[-1] - e[0])
+            # valid = converged decay barrier: interior saddle AND the strip is
+            # METASTABLE (3Q endpoint below it). Quarter-widths make the pinned
+            # strip the ground state (unbalanced K-enhanced bond row) -> no decay.
             w.writerow(dict(half_width=r["half_width"], barrier_meV=r["barrier_meV"],
+                            dE_3Q_minus_strip_meV=round(dE, 3),
                             n_defect_bonds=r["n_defect_bonds"], saddle_image=r["saddle_image"],
                             iterations=r["iterations"],
-                            valid=int(0 < r["saddle_image"] < args.images - 1)))
-    print(f"\n{'hw':>6} {'bonds':>6} {'barrier(meV)':>13}")
+                            valid=int(0 < r["saddle_image"] < args.images - 1 and dE < 0.0)))
+    print(f"\n{'hw':>6} {'bonds':>6} {'barrier(meV)':>13} {'dE(meV)':>9}")
     for r in sorted(results, key=lambda r: r["half_width"]):
-        print(f"{r['half_width']:6.2f} {r['n_defect_bonds']:6d} {r['barrier_meV']:13.2f}")
+        tag = f"hw{r['half_width']:.2f}".replace(".", "p")
+        e = np.load(OUT / tag / "final_band.npz")["energies"]
+        print(f"{r['half_width']:6.2f} {r['n_defect_bonds']:6d} {r['barrier_meV']:13.2f} {e[-1]-e[0]:9.2f}")
     print(f"wrote {rel(csv_path)}")
 
 
