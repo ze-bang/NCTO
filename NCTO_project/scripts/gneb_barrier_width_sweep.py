@@ -86,7 +86,7 @@ def main() -> None:
     ap.add_argument("--lattice", type=int, default=36)
     ap.add_argument("--strength", type=float, default=0.5)
     ap.add_argument("--half-width-values", nargs="+", type=float,
-                    default=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0])
+                    default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
     ap.add_argument("--images", type=int, default=25)
     ap.add_argument("--n-iter", type=int, default=4000)
     ap.add_argument("--dt", type=float, default=0.006)
