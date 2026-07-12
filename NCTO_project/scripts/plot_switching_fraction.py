@@ -19,7 +19,7 @@ from matplotlib import cm, colors
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT = (ROOT / "NCTO_project" / "tuned_kruger_campaign"
            / "pinning_switching_crosscheck_L36" / "analysis"
-           / "L36_kred_s0p500_hw1p80_kred_0p8ms_hw1p8_drive_crosscheck_summary.json")
+           / "L36_kred_s0p500_hw2p00_kred_hw2p0_drive_crosscheck_summary.json")
 
 
 def main() -> None:
@@ -50,7 +50,10 @@ def main() -> None:
             ax.set_ylim(*ylim)
         ax.grid(alpha=0.25)
     axes[0].legend(title="background disorder", frameon=False, fontsize=9)
-    fig.suptitle(f"L36 kred line (hw=1.8) switching vs fluence — disorder rounding\n"
+    import re
+    m = re.search(r"hw(\d+)p(\d+)", args.summary.name)
+    hw_lab = f"{m.group(1)}.{m.group(2).rstrip('0') or '0'}" if m else "?"
+    fig.suptitle(f"L36 kred line (hw={hw_lab}) switching vs fluence — disorder rounding\n"
                  f"{args.summary.name}", fontsize=10)
     fig.tight_layout()
 
