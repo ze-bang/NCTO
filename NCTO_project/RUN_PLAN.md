@@ -1,108 +1,50 @@
-# RUN PLAN
+# NCTO campaign — final deliverables
 
-Status of the Na₂Co₂TeO₆ optically-written-zigzag campaign. All scripts use the
-**corrected** quadratic E1 magnetoelastic coupling `λ_{X,2}=(X/K)·λ_{K,2}`
-(`λ_{K,2}=0.02`), already baked in.
+All results use the tuned-Kruger Hamiltonian (meV) `J=0.68, K=-7.89, Γ=3.07,
+Γ'=-2.94, J2_A=-0.06, J2_B=-0.70, J3=0.52` at **L=36**, with the corrected
+signed-Grüneisen E1 coupling `λ_{X,2}=(X/K)·λ_{K,2}` on all four channels
+(`λ_{J7,0}=0` everywhere except the polarization study). Solver =
+`ClassicalSpin_Cpp` (`build/spin_solver` + `build/gneb_field_eval`), overlaid
+via `build`/`util` symlinks; runtime env `cluster_campaign/env_fir.sh`;
+regenerate any run with `run_campaign.py <subcommand>` (resumable).
 
-## Prerequisites (once per machine)
+| # | Deliverable | Figure | Driver / plotter |
+|---|---|---|---|
+| 1 | Optical switching threshold map E0c(J7, λ) — clean, all-channel | `phase_diagram_allchan/analysis/switching_threshold_map.png` (+ 3D cube) | `run_campaign.py drive-pd --all-channels` → `plot_switching_phase.py`, `plot_phase_barrier_cube.py` |
+| 2 | Static 3Q-vs-zigzag phase diagram (no drive) | `static_phase_diagram/analysis/static_phase_diagram_3q_zz.png` | `run_campaign.py static-pd` |
+| 3 | Kinetic depinning barrier vs defect width (continuation GNEB) | `kinetic_barrier/kinetic_barrier_vs_width.png` + `width_sweep/mep_profiles_per_hw.png` | `gneb_barrier_width_sweep.py` → `plot_mep_profiles.py`, `plot_kinetic_barrier_width.py` |
+| 4 | Defect width calibrated to the 0.8 ms / 10 K lifetime | (same figure, right panel) | — |
+| 5 | Switching fraction vs fluence at increasing disorder (hw=2.0) | `pinning_switching_crosscheck_L36/analysis/switching_fraction_vs_fluence.png` | `run_campaign.py switching --half-width 2.0` → `plot_switching_fraction.py` |
+| S | Polarization switching map r3(θ, E0), J7 modulation off/on | `polarization_fluence_study/analysis/polarization_threshold_vs_theta.png` | `run_campaign.py polarization` → `plot_polarization_threshold.py` |
 
-1. Build the solver: clone `ClassicalSpin_Cpp`, then
-   `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target spin_solver`.
-2. Overlay this repo onto the solver checkout (`cp -r NCTO/NCTO_project NCTO/NCTO_project_paper ClassicalSpin_Cpp/`),
-   so scripts resolve `build/spin_solver` and `util/readers_new/`.
-3. Python: `numpy h5py matplotlib scipy`. Everything is resumable (the solver
-   skips existing outputs).
+## Result summary
 
----
-
-## ✅ DONE — GNEB depinning barrier (relaxation, extended defect)
-
-The 36×36 GNEB minimum-energy path from the pinned zigzag strip to relaxed 3Q,
-for an enhanced-|K| line defect swept over half-width, is **correct and final**
-(Fig 3, `selected_kred_mep_L36.png`; barrier grows 3.8→21.2 meV over hw=0.5→2).
-This is a static (spin-only) transition-state calculation — it does **not**
-involve the phonon drive.
-
-Regenerate if needed:
-```bash
-python3 NCTO_project/scripts/selected_gneb_mep_l36_width_sweep.py   # barrier vs width
-python3 NCTO_project/scripts/selected_gneb_mep_l36.py               # the selected hw=2 MEP + figure
-```
-Data lives in `tuned_kruger_campaign/defect_catalogue_L36/`; reference states in
-`tuned_kruger_campaign/kinetic_barrier/`.
-
----
-
-## 🔨 TODO — the driving (phonon-pump) studies
-
-All runs are consolidated into **one driver**, `run_campaign.py`, sharing
-`ncto_common.py` (single source of the Hamiltonian and the corrected
-signed-Grüneisen couplings `λ_{X,2}=(X/K)·λ_{K,2}`). Everything is **L=36**,
-resumable, and parallelised across all cores with one OMP-pinned worker pool
-(`OMP_NUM_THREADS=1` per solver process — no oversubscription).
-
-Run the whole campaign:
-```bash
-python3 NCTO_project/scripts/run_campaign.py all --workers "$(nproc)"
-```
-or any single study via its subcommand (below).
-
-### 0. Static (no-drive) 3Q-vs-ZZ phase diagram — NEW baseline
-Ground-state 3Q vs ZZ over J7 ∈ [0, −0.7] (Δ=0.05, 15 points), same λ_{K,2}
-span. No pump: the quadratic E1 striction `δX∝ε²` vanishes at the ε=0
-equilibrium (below the pseudo-JT threshold λ*_{K,2}≈1.55), so the static
-boundary is **λ-independent** — set by J7 alone. Emits `dE(J7)=E_3Q−E_ZZ`
-(the CNT driving force) and the winner map.
-```bash
-python3 NCTO_project/scripts/run_campaign.py static-pd --workers "$(nproc)"
-```
-~30 SA relaxations + energy evals (15 J7 × {3Q,ZZ}); minutes.
-→ `tuned_kruger_campaign/static_phase_diagram/analysis/static_phase_diagram.{csv,png}`
-
-### 1. Clean switching phase diagram (Fig 1)
-Driven switch/no-switch over (J7, λ_{K,2}, E0), all four channels (signed
-Grüneisen). 6 J7 × 7 λ × **18 E0 (E0→40)** = 756 L36 MD. The E0 grid runs to 40
-because the L=36 threshold is ~16 (vs ~8 at L18) — the extension is now the
-default.
-```bash
-python3 NCTO_project/scripts/run_campaign.py drive-pd --all-channels --workers "$(nproc)"
-python3 NCTO_project/scripts/plot_phase_barrier_cube.py --all-channels
-```
-
-### 2. Switching fraction vs fluence at different disorder (Figs 2c, 4)
-Fixed enhanced-|K| line (`dK=−0.5|K|`, hw=2.0) + zero-mean Gaussian background
-disorder on all NN bonds; switched fraction vs E0 for several σ_K.
-```bash
-python3 NCTO_project/scripts/run_campaign.py switching --workers "$(nproc)"
-# (defaults: kred, strength 0.5, half-width 2.0, global-zero-k, seeds 25,
-#  σ_K 0..0.5, the 21-point E0 grid, suffix allJKGG_err10)
-
-A=NCTO_project/tuned_kruger_campaign/pinning_switching_crosscheck_L36/analysis
-S=$A/L36_kred_s0p500_hw2p00_allJKGG_err10_drive_crosscheck_summary.json
-python3 NCTO_project/scripts/plot_l36_switching_rounding.py --summary "$S" --out-dir "$A/l36_switching_allJKGG_err10"
-python3 NCTO_project/scripts/plot_one_picture_signatures.py --switch-summary "$S" \
-  --out-dir "$A/one_picture_allJKGG_err10" --max-switch-sigma 0.20
-```
-~2646 L36 MD + quenches, ~6–10 h at 32 cores.
-
-### 3. Polarization study ± J7 phonon tuning (Fig `pol`)
-Clean lattice (no defect, no disorder). Scan pump polarization θ × fluence E0,
-run twice: J7 ring-exchange phonon coupling **off** (`λ_{J7,0}=0`) vs **on**
-(`λ_{J7,0}=(J7/K)λ_{K,2}=+1.014×10⁻³`, the Grüneisen-matched value). The bilinear
-striction makes the threshold θ-dependent; the isotropic J7 breathing coupling
-`δJ7(Q)=λ_{J7,0}|Q|²` shifts E0ᶜ(θ) uniformly in θ. Their difference is the
-J7-tuning contribution. 2×7×9 = 126 L36 MD.
-```bash
-python3 NCTO_project/scripts/run_campaign.py polarization --workers "$(nproc)"
-```
-
-**Cluster:** `sbatch NCTO_project/cluster_campaign/run_campaign.sbatch` (update it to
-call `run_campaign.py all`).
-
----
-
-## 📝 After the driving runs
-
-Update `NCTO_project_paper/phonon_engineering_ncto.tex` with the new numbers
-(clean threshold, σ-resolved switching %, 25–75% widths, Fig `pol` E0ᶜ(θ)) and
-confirm `polarization_fluence_switching.png` exists so the paper builds.
+1. **Threshold map (clean, defect-free).** Switching is confined to a wedge near
+   the 3Q/ZZ degeneracy: E0c=14 at (J7=-0.40, λ=0.01) rising to ~38 by λ=0.04;
+   no switching for J7 ≤ -0.48 or λ ≥ 0.045 (up to E0=40). Stronger E1 coupling
+   *raises* the threshold (drive-renormalized 3Q stabilization).
+2. **Static phase diagram.** Zigzag ground state for J7 ≳ -0.42, 3Q below;
+   boundary λ-independent (quadratic striction inert at ε=0). Working point
+   J7=-0.40 sits just on the ZZ side of near-degeneracy (dE ≈ +0.002 meV/site);
+   the 3Q branch is metastable only for J7 ≤ -0.40.
+3. **Kinetic barrier vs width.** Continuation GNEB (each hw warm-started from
+   the previous) gives one converged MEP family: ΔG = 9.4 / 11.3 / 16.3 / 16.3 /
+   17.4 meV at hw = 1.0 / 1.5 / 2.0 / 2.5 / 3.0, saturating ≈ 17.4 meV.
+   Quarter-widths (0.75-2.75) are **discarded**: their unbalanced K-enhanced
+   bond row makes the pinned strip the *ground state* (end state above strip →
+   no decay barrier); hw=0.5 strip is not metastable. Per-hw MEP profiles are
+   the convergence record.
+4. **Lifetime calibration.** ΔG* = 17.7 meV for τ=0.8 ms at 10 K (τ0=ħ/J≈1 ps).
+   The saturated barrier 17.4 meV gives τ ≈ 0.5 ms — the 0.8 ms target within
+   the attempt-time band (τ0≈1.5 ps exact). Switching study uses hw=2.0
+   (ΔG=16.3 meV). NB the barrier is extensive in defect *length* (0.53 meV/cell
+   at hw=2), so lifetimes quote a fixed physical defect length (ℓ_d = box = 36).
+5. **Disorder rounding (hw=2.0).** Clean line: sharp threshold at E0≈16-17.
+   Zero-mean Gaussian disorder on the NN Kitaev coupling (σ_K per bond)
+   progressively rounds the step and moves the onset to lower fluence
+   (σ_K=0.5 writes from E0≈6) — threshold-free switching from disorder.
+S. **Polarization (clean, ± J7 modulation).** Converged r3(θ,E0) maps show
+   *windowed* switching: clean near θ=0 and 90°, stable partial-nematic states
+   (r3≈0.2-0.5) at intermediate θ. Grüneisen-matched J7 breathing modulation
+   (λ_{J7,0}=+1.014e-3) lowers thresholds but fragments the switching region.
+   Verified clean geometry and full dynamical convergence.
