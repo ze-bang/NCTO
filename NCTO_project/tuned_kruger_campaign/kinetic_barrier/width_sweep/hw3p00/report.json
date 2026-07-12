@@ -1,0 +1,9 @@
+{
+  "lattice": 36,
+  "strength": 0.5,
+  "half_width": 3.0,
+  "n_defect_bonds": 671,
+  "barrier_meV": 17.35006351046104,
+  "saddle_image": 10,
+  "iterations": 3292
+}
