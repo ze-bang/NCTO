@@ -1,0 +1,9 @@
+{
+  "half_width": 1.0,
+  "images": 41,
+  "barrier_meV": 9.001689402815828,
+  "saddle_image": 13,
+  "iterations": 1201,
+  "base_barrier_meV": 9.41774826413166,
+  "delta_vs_base_meV": -0.4160588613158325
+}
